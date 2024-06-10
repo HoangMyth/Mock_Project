@@ -9,7 +9,7 @@ std::string View::convertSecondsToTimeString(int totalSeconds) {
     int seconds = totalSeconds % 60;    
 
     std::ostringstream oss;
-    oss << std::setw(2) << std::setfill('0') << hours << ":"
+    oss //<< std::setw(2) << std::setfill('0') << hours << ":"
         << std::setw(2) << std::setfill('0') << minutes << ":"
         << std::setw(2) << std::setfill('0') << seconds;
 
@@ -72,7 +72,7 @@ void View::displayPlayback(void){
     << std::setw(33) << "Play[x]" 
     << std::setw(33) << "Pause[o]"
     << std::setw(33) << "Next[h]"
-    << std::setw(33) << "Repeat[]"
+    << std::setw(33) << "Repeat[m]"
     << std::setw(33) << "Volume[+][-]"
     << std::right 
     << std::setw(1) << "|"

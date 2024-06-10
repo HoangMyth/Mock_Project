@@ -11,6 +11,7 @@
 
 class Controller {
 public:
+    Controller();
     Controller(const std::string &baseDir);
      ~Controller();
      void ReloadScreen();
@@ -68,10 +69,12 @@ private:
     std::vector<Playlist>  playlists;
     typedef void(Controller::*Action)();
     Action currentAction;
+    Action preAction;
     std::stack<Action> actions; 
     void callNextFunc();
     PlayBack play_back;
-    std::thread timeThread;
+    bool new_tab = false;
+    int curPlist;
     bool ex_play = false;
     static PlayBack* g_playback;
     static std::vector<MediaFile>* g_mediafiles ;

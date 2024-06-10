@@ -1,5 +1,6 @@
 #include "Playback.h"
 #include "Controller.h"
+#include "View.h"
 
 PlayBack ::PlayBack() : quitTimeThread(false), timeUpdated(false) {}
 PlayBack::~PlayBack() {
@@ -33,14 +34,7 @@ bool PlayBack :: init()
     return true;
 }
 
-void PlayBack :: close()
-{
-    // Clean up resources
-    Mix_CloseAudio();
-    SDL_Quit();
-}
-
-void PlayBack :: playMusic(const std::string &filepath, std::string title) {
+void PlayBack :: playMusic(const std::string &filepath) {
     // Stop if anyway
     if (Mix_PlayingMusic()) {
         Mix_HaltMusic();
@@ -63,23 +57,27 @@ void PlayBack :: playMusic(const std::string &filepath, std::string title) {
     }
     // Set start time
     music_Data.startTime = SDL_GetTicks();
-    std::cout << "Playing: " << music_Data.currentTrack + 1 << ". " << title << std::endl<<std::endl;
-    std::cout << std::endl;
 }
 
 void PlayBack :: FunctionCallback(std::vector<MediaFile> files) {
     if (!flag) {
         if (repeatSingleSong) {
-            playMusic(files[music_Data.currentTrack].getPath(), files[music_Data.currentTrack].getTitle());
-
+            playMusic(files[music_Data.currentTrack].getPath());
+            StartTimeThread(files[music_Data.currentTrack].getTitle(), files[music_Data.currentTrack].getDuration());
         } else {
-            music_Data.currentTrack = (music_Data.currentTrack + 1) % files.size();
-            playMusic(files[music_Data.currentTrack].getPath(), files[music_Data.currentTrack].getTitle());
+            // music_Data.currentTrack = (music_Data.currentTrack + 1) % files.size();
+            // playMusic(files[music_Data.currentTrack].getPath());
+            // StartTimeThread(files[music_Data.currentTrack].getTitle(), files[music_Data.currentTrack].getDuration());
+            NextMedia(files);
         }
     }
 }
 
-void PlayBack :: displayCurrentTime() {
+void PlayBack :: displayCurrentTime(std::string title, int duration) {
+    View view;
+    std::cout << std::endl;
+    view.printLine('=',200);
+    std::string time = view.convertSecondsToTimeString(duration);
     while (!quitTimeThread) {
         std::unique_lock<std::mutex> lk(cv_m);
         cv.wait_for(lk, std::chrono::seconds(1));
@@ -91,13 +89,31 @@ void PlayBack :: displayCurrentTime() {
             int minutes = currentTimeSec / 60;
             int seconds = currentTimeSec % 60;
             std::string currentTime = std::to_string(minutes) + ":" + (seconds < 10 ? "0" : "") + std::to_string(seconds);
-            std::cout << "\033[B\033[F\033[B";
-            std::cout << "\rCurrent Time: " << currentTime << std::flush;
-            std::cout << "\033[F\033[C\033[C\033[C\033[C\033[C\033[C\033[C\033[C\033[C\033[C\033[C\033[C\033[C\033[C"<< std::flush;
+            std::cout << std::left
+            << std::setw(1) << "\r|"
+            << std::setw(185) << title
+            << std::setw(6) << currentTime 
+            << "/"
+            << std::setw(6) << time
+            << "|"
+            << std::flush;
         }
     }
+    //std::cout << "-" << std::endl;
 }
-void PlayBack::PlayMedia(std::vector<MediaFile>& files){
+void PlayBack::StartTimeThread(std::string title, int duration){
+    StopTimeThread();
+    quitTimeThread = false;
+    timeThread = std::thread(&PlayBack::displayCurrentTime,this,title,duration);
+}
+void PlayBack::StopTimeThread(){
+    quitTimeThread = true;
+    if (timeThread.joinable()) {
+        timeThread.join();
+    }
+}
+bool PlayBack::PlayMedia(std::vector<MediaFile>& files){
+    bool set = false;
     if(!files.empty()){
         int num;
         std::cout <<"Enter Song: ";
@@ -107,13 +123,14 @@ void PlayBack::PlayMedia(std::vector<MediaFile>& files){
         if((num > 0) && (num <= files.size())){
             setTrack(num - 1);
             setflag(true);
-            playMusic(files[num - 1].getPath(), files[num - 1].getTitle());
+            playMusic(files[num - 1].getPath());
             setflag(false);
-            //std::cout << (music_Data.currentTrack + 1)  <<". "<<files[num -1].getTitle() << std::endl;
+            set = true;
+            StartTimeThread(files[num - 1].getTitle(),files[num - 1].getDuration());
         }
     }
+    return set;
 }
-
 void PlayBack::RepeatSong() {
     std::cout << "Mode play all track: ON" << std::endl;
     repeatSingleSong = false;
@@ -128,13 +145,13 @@ void PlayBack::NextMedia(std::vector<MediaFile>& files){
     setflag(true);  
     std::cout << std::endl;
     std::cout << std::endl;
-    std::cout << "\033[F\033[2KNext Track\n";
+    std::cout << "Next Track\n";
     std::cout << std::endl;
     //std::cout << "Next Track" << std::endl;
     isPaused = false;  
     music_Data.currentTrack = (music_Data.currentTrack + 1) % files.size();
-    playMusic(files[music_Data.currentTrack].getPath(), files[music_Data.currentTrack].getTitle());
-    std::cout << (music_Data.currentTrack + 1)  <<". "<< files[music_Data.currentTrack].getTitle() << std::endl;
+    playMusic(files[music_Data.currentTrack].getPath());
+    StartTimeThread(files[music_Data.currentTrack].getTitle(),files[music_Data.currentTrack].getDuration());
     setflag(false);
 }
 
@@ -147,8 +164,8 @@ void PlayBack::PreviousMedia(std::vector<MediaFile>& files){
     std::cout << std::endl;
     isPaused = false;
     music_Data.currentTrack = (music_Data.currentTrack - 1 + files.size()) % files.size();
-    playMusic(files[music_Data.currentTrack].getPath(), files[music_Data.currentTrack].getTitle());
-    std::cout << (music_Data.currentTrack + 1) <<". "<<files[music_Data.currentTrack].getTitle() << std::endl;
+    playMusic(files[music_Data.currentTrack].getPath());
+    StartTimeThread(files[music_Data.currentTrack].getTitle(),files[music_Data.currentTrack].getDuration());
     setflag(false);
 }
 
@@ -179,26 +196,4 @@ void PlayBack :: VolumeDown(){
     volume = std::max(0, volume - Volume_Step);
     Mix_VolumeMusic(volume);
     std::cout << "Volume Decreased: " << volume << "\n";
-}
-
-
-void PlayBack :: RunMusic(const std::vector<MediaFile> &files) {
-
-    if (!init()) {
-        std::cerr << "Failed to initialize" << std::endl;
-        return;
-    }
-    // Get music from directory
-    if (files.empty()) {
-        std::cerr << "No music found in the directory!" << std::endl;
-        close();
-        return;
-    }
-    music_Data.currentTrack = current;
-    // Load first track
-    music_Data.music = nullptr; // Object Mix_Music often used with other function of SDL_mixer to play music
-    playMusic(files[music_Data.currentTrack].getPath(), files[music_Data.currentTrack].getTitle());
-    Mix_VolumeMusic(volume); // Set initial volume
-
-    close();
 }

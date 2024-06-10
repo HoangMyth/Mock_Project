@@ -1,7 +1,7 @@
 #include "Controller.h"
 #include "View.h"
 #include <iostream>
-
+Controller::Controller(){}
 PlayBack *Controller::g_playback = nullptr;
 std::vector<MediaFile> *Controller::g_mediafiles = nullptr;
 // Contructor
@@ -78,10 +78,6 @@ void Controller::getfilelist(std::vector<std::string> filepaths, std::vector<Med
 ////////////////////////////////////////Main process/////////////////////////////////////////////
 void Controller::run()
 {
-    // PlayBack play_back;
-    // std::thread timeThread([&play_back]()
-    //                        { play_back.displayCurrentTime(); });
-
     g_playback = &play_back;
     g_mediafiles = &mediafiles;
     Mix_HookMusicFinished(MusicFinishedCallbackWrapper);
@@ -97,11 +93,7 @@ void Controller::run()
     {
         callNextFunc();
     }
-    play_back.quitTimeThread = true;
-    if (timeThread.joinable())
-    {
-        timeThread.join();
-    }
+    play_back.StopTimeThread();
 }
 
 //---------------------------------------Common actions----------------------------------------
@@ -147,21 +139,16 @@ void Controller::playbackActions(char command)
     case 'x':
         ex_play = true;
         Play();
-        play_back.quitTimeThread = false;
-        if (timeThread.joinable())
-        {
-            timeThread.join();
-        }
-        timeThread = std::thread([&]()
-                                 { play_back.displayCurrentTime(); });
         break;
     case 'o': // pause music
         ex_play = true;
         play_back.PauseMusic();
+        //ReloadScreen();
         break;
     case 'l': //repeat all track
         ex_play = true;
         play_back.RepeatSong();
+        //ReloadScreen();
         break;
     case 'm': //repeat one track
         ex_play = true;
@@ -170,6 +157,7 @@ void Controller::playbackActions(char command)
     case 'k': // resume music
         ex_play = true;
         play_back.ResumeMusic();
+        ReloadScreen();
         break;
     case 'h': // next track
         ex_play = true;
@@ -230,11 +218,7 @@ void Controller::Homeaction()
         case 'q': // Quit
             ex = true;
             g_playback = NULL;
-            play_back.quitTimeThread = true;
-            if (timeThread.joinable())
-            {
-                timeThread.join();
-            }
+            play_back.StopTimeThread();
             return;
         default:
             playbackActions(command);
@@ -287,11 +271,7 @@ void Controller::Musicaction()
         case 'q': // Quit
             ex = true;
             g_playback = NULL;
-            play_back.quitTimeThread = true;
-            if (timeThread.joinable())
-            {
-                timeThread.join();
-            }
+            play_back.StopTimeThread();
             return;
         default:
             playbackActions(command);
@@ -342,11 +322,7 @@ void Controller::Videoaction()
         case 'q': // Quit
             ex = true;
             g_playback = NULL;
-            play_back.quitTimeThread = true;
-            if (timeThread.joinable())
-            {
-                timeThread.join();
-            }
+            play_back.StopTimeThread();
             return;
         default:
             playbackActions(command);
@@ -417,11 +393,7 @@ void Controller::Playlistaction()
         case 'q': // Quit
             ex = true;
             g_playback = NULL;
-            play_back.quitTimeThread = true;
-            if (timeThread.joinable())
-            {
-                timeThread.join();
-            }
+            play_back.StopTimeThread();
             return;
         default:
             playbackActions(command);
@@ -475,11 +447,7 @@ void Controller::PlaylistLibaction()
         case 'q': // Quit
             ex = true;
             g_playback = NULL;
-            play_back.quitTimeThread = true;
-            if (timeThread.joinable())
-            {
-                timeThread.join();
-            }
+            play_back.StopTimeThread();
             return;
         default:
             playbackActions(command);
@@ -1208,24 +1176,51 @@ void Controller::renamePlaylist()
 void Controller::Play()
 {
     if (currentAction == &Controller::Homeaction)
-    {
-        play_back.PlayMedia(mediafiles);
+    {   
+        play_back.StopTimeThread();
+        ReloadScreen();
+        new_tab = play_back.PlayMedia(mediafiles);
+        if(new_tab){
+            preAction = currentAction;
+            new_tab = false; 
+        }
     }
     else if (currentAction == &Controller::Musicaction)
     {
-        play_back.PlayMedia(musicfiles);
+        play_back.StopTimeThread();
+        ReloadScreen();
+        new_tab = play_back.PlayMedia(musicfiles);
+        if(new_tab){
+            preAction = currentAction;
+            new_tab = false; 
+        }
     }
     else if (currentAction == &Controller::Videoaction)
     {
-        play_back.PlayMedia(videofiles);
+        play_back.StopTimeThread();
+        ReloadScreen();
+        new_tab = play_back.PlayMedia(videofiles);
+        if(new_tab){
+            preAction = currentAction;
+            new_tab = false; 
+        }
     }
     else if (currentAction == &Controller::Playlistaction)
     {
+        play_back.StopTimeThread();
+        ReloadScreen();
         PlayAll();
     }
     else if (currentAction == &Controller::PlaylistLibaction)
     {
-        play_back.PlayMedia(playlists[current_playlist - 1].getFiles());
+        play_back.StopTimeThread();
+        ReloadScreen();
+        new_tab = play_back.PlayMedia(playlists[current_playlist - 1].getFiles());
+        if(new_tab){
+            curPlist = current_playlist;
+            preAction = currentAction;
+            new_tab = false; 
+        }
     }
 }
 void Controller::PlayAll()
@@ -1235,51 +1230,73 @@ void Controller::PlayAll()
         int num;
         std::cout << "Enter playlist: ";
         std::cin >> num;
-        current_playlist = num;
+        curPlist = num;
         if ((num > 0) && (num <= playlists.size()) && (playlists[num - 1].getNum() != 0))
         {
-            play_back.PlayMedia(playlists[num - 1].getFiles());
+            play_back.StopTimeThread();
+            ReloadScreen();
+            new_tab = play_back.PlayMedia(playlists[num - 1].getFiles());
+            if(new_tab){
+                preAction = currentAction;
+                new_tab = false; 
+            }
         }
     }
 }
 // Next mediafile
 void Controller::Next()
 {
-    if (currentAction == &Controller::Homeaction)
+    if (preAction == &Controller::Homeaction)
     {
+        play_back.StopTimeThread();
+        ReloadScreen();
         play_back.NextMedia(mediafiles);
     }
-    else if (currentAction == &Controller::Musicaction)
+    else if (preAction == &Controller::Musicaction)
     {
+        play_back.StopTimeThread();
+        ReloadScreen();
         play_back.NextMedia(musicfiles);
     }
-    else if (currentAction == &Controller::Videoaction)
+    else if (preAction == &Controller::Videoaction)
     {
+        play_back.StopTimeThread();
+        ReloadScreen();
         play_back.NextMedia(videofiles);
     }
-    else if ((currentAction == &Controller::Playlistaction) || (currentAction == &Controller::PlaylistLibaction))
+    else if ((preAction == &Controller::Playlistaction) || (preAction == &Controller::PlaylistLibaction))
     {
-        play_back.NextMedia(playlists[current_playlist - 1].getFiles());
+        play_back.StopTimeThread();
+        ReloadScreen();
+        play_back.NextMedia(playlists[curPlist - 1].getFiles());
     }
 }
 // Previous mediafile
 void Controller::Previous()
 {
-    if (currentAction == &Controller::Homeaction)
+    if (preAction == &Controller::Homeaction)
     {
+        play_back.StopTimeThread();
+        ReloadScreen();
         play_back.PreviousMedia(mediafiles);
     }
-    else if (currentAction == &Controller::Musicaction)
+    else if (preAction == &Controller::Musicaction)
     {
+        play_back.StopTimeThread();
+        ReloadScreen();
         play_back.PreviousMedia(musicfiles);
     }
-    else if (currentAction == &Controller::Videoaction)
+    else if (preAction == &Controller::Videoaction)
     {
+        play_back.StopTimeThread();
+        ReloadScreen();
         play_back.PreviousMedia(videofiles);
     }
-    else if ((currentAction == &Controller::Playlistaction) || (currentAction == &Controller::PlaylistLibaction))
+    else if ((preAction == &Controller::Playlistaction) || (preAction == &Controller::PlaylistLibaction))
     {
-        play_back.PreviousMedia(playlists[current_playlist - 1].getFiles());
+        play_back.StopTimeThread();
+        ReloadScreen();
+        play_back.PreviousMedia(playlists[curPlist- 1].getFiles());
     }
 }
 // Reload screen

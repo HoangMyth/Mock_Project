@@ -32,16 +32,14 @@ class PlayBack {
 public:
     PlayBack();
     ~PlayBack();
-    void PlayMedia(std::vector<MediaFile>& files);
+    bool PlayMedia(std::vector<MediaFile>& files);
     void NextMedia(std::vector<MediaFile>& files);
     void PreviousMedia(std::vector<MediaFile>& files);
     bool init();
     void setflag(bool a);
-    void close();
-    void playMusic(const std::string &filepath, std::string title);
+    void playMusic(const std::string &filepath);
     void FunctionCallback(std::vector<MediaFile> songlist);
-    void displayCurrentTime();
-    void RunMusic(const std::vector<MediaFile>& mediaFile);
+    void displayCurrentTime(std::string title, int duration);
     void PauseMusic();
     void ResumeMusic();
     void VolumeUp();
@@ -50,6 +48,8 @@ public:
     void stopTimer();
     void RepeatSong();
     void AllSong();
+    void StartTimeThread(std::string title, int duration);
+    void StopTimeThread();
     std::atomic<bool> quitTimeThread;
     bool isPaused = false;
 
@@ -62,7 +62,7 @@ private:
     //std::atomic<bool> quitTimeThread;
     std::condition_variable cv;
     std::mutex cv_m;
-   // std::thread timeThread;
+    std::thread timeThread;
     std::atomic<bool> timeUpdated;
 };
 
