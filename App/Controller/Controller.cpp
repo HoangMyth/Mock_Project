@@ -1,7 +1,7 @@
 #include "Controller.h"
 #include "View.h"
 #include <iostream>
-Controller::Controller(){}
+Controller::Controller() {}
 PlayBack *Controller::g_playback = nullptr;
 std::vector<MediaFile> *Controller::g_mediafiles = nullptr;
 // Contructor
@@ -143,14 +143,14 @@ void Controller::playbackActions(char command)
     case 'o': // pause music
         ex_play = true;
         play_back.PauseMusic();
-        //ReloadScreen();
+        // ReloadScreen();
         break;
-    case 'l': //repeat all track
+    case 'l': // repeat all track
         ex_play = true;
         play_back.RepeatSong();
-        //ReloadScreen();
+        // ReloadScreen();
         break;
-    case 'm': //repeat one track
+    case 'm': // repeat one track
         ex_play = true;
         play_back.AllSong();
         break;
@@ -190,8 +190,25 @@ void Controller::Homeaction()
     Home();
     while (true)
     {
-        std::cout << "Enter command: ";
-        std::cin >> command;
+        // std::cout << "Enter command: ";
+        // std::cin >> command;
+        while (true)
+        {
+            std::cout << "Enter command: ";
+            std::cin >> command;
+
+            // Check if the input was valid and is a single character
+            if (std::cin.fail() || std::cin.peek() != '\n')
+            {
+                std::cin.clear();                                                   // Clear the error flag
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Discard invalid input
+                std::cout << "Invalid input. Please enter a single character." << std::endl;
+            }
+            else
+            {
+                break; // Exit loop if input is valid
+            }
+        }
         switch (command)
         {
         case 'r':
@@ -241,8 +258,25 @@ void Controller::Musicaction()
     View view;
     while (true)
     {
-        std::cout << "Enter command: ";
-        std::cin >> command;
+        // std::cout << "Enter command: ";
+        // std::cin >> command;
+        while (true)
+        {
+            std::cout << "Enter command: ";
+            std::cin >> command;
+
+            // Check if the input was valid and is a single character
+            if (std::cin.fail() || std::cin.peek() != '\n')
+            {
+                std::cin.clear();                                                   // Clear the error flag
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Discard invalid input
+                std::cout << "Invalid input. Please enter a single character." << std::endl;
+            }
+            else
+            {
+                break; // Exit loop if input is valid
+            }
+        }
         switch (command)
         {
         case 'f':
@@ -294,8 +328,25 @@ void Controller::Videoaction()
     View view;
     while (true)
     {
-        std::cout << "Enter command: ";
-        std::cin >> command;
+        // std::cout << "Enter command: ";
+        // std::cin >> command;
+        while (true)
+        {
+            std::cout << "Enter command: ";
+            std::cin >> command;
+
+            // Check if the input was valid and is a single character
+            if (std::cin.fail() || std::cin.peek() != '\n')
+            {
+                std::cin.clear();                                                   // Clear the error flag
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Discard invalid input
+                std::cout << "Invalid input. Please enter a single character." << std::endl;
+            }
+            else
+            {
+                break; // Exit loop if input is valid
+            }
+        }
         switch (command)
         {
         case 'f':
@@ -346,8 +397,25 @@ void Controller::Playlistaction()
     View view;
     while (true)
     {
-        std::cout << "Enter command: ";
-        std::cin >> command;
+        // std::cout << "Enter command: ";
+        // std::cin >> command;
+        while (true)
+        {
+            std::cout << "Enter command: ";
+            std::cin >> command;
+
+            // Check if the input was valid and is a single character
+            if (std::cin.fail() || std::cin.peek() != '\n')
+            {
+                std::cin.clear();                                                   // Clear the error flag
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Discard invalid input
+                std::cout << "Invalid input. Please enter a single character." << std::endl;
+            }
+            else
+            {
+                break; // Exit loop if input is valid
+            }
+        }
         switch (command)
         {
         case 'f':
@@ -415,8 +483,25 @@ void Controller::PlaylistLibaction()
     View view;
     while (true)
     {
-        std::cout << "Enter command: ";
-        std::cin >> command;
+        // std::cout << "Enter command: ";
+        // std::cin >> command;
+        while (true)
+        {
+            std::cout << "Enter command: ";
+            std::cin >> command;
+
+            // Check if the input was valid and is a single character
+            if (std::cin.fail() || std::cin.peek() != '\n')
+            {
+                std::cin.clear();                                                   // Clear the error flag
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Discard invalid input
+                std::cout << "Invalid input. Please enter a single character." << std::endl;
+            }
+            else
+            {
+                break; // Exit loop if input is valid
+            }
+        }
         switch (command)
         {
         case 'f':
@@ -1176,13 +1261,14 @@ void Controller::renamePlaylist()
 void Controller::Play()
 {
     if (currentAction == &Controller::Homeaction)
-    {   
+    {
         play_back.StopTimeThread();
         ReloadScreen();
         new_tab = play_back.PlayMedia(mediafiles);
-        if(new_tab){
+        if (new_tab)
+        {
             preAction = currentAction;
-            new_tab = false; 
+            new_tab = false;
         }
     }
     else if (currentAction == &Controller::Musicaction)
@@ -1190,9 +1276,10 @@ void Controller::Play()
         play_back.StopTimeThread();
         ReloadScreen();
         new_tab = play_back.PlayMedia(musicfiles);
-        if(new_tab){
+        if (new_tab)
+        {
             preAction = currentAction;
-            new_tab = false; 
+            new_tab = false;
         }
     }
     else if (currentAction == &Controller::Videoaction)
@@ -1200,9 +1287,10 @@ void Controller::Play()
         play_back.StopTimeThread();
         ReloadScreen();
         new_tab = play_back.PlayMedia(videofiles);
-        if(new_tab){
+        if (new_tab)
+        {
             preAction = currentAction;
-            new_tab = false; 
+            new_tab = false;
         }
     }
     else if (currentAction == &Controller::Playlistaction)
@@ -1216,10 +1304,11 @@ void Controller::Play()
         play_back.StopTimeThread();
         ReloadScreen();
         new_tab = play_back.PlayMedia(playlists[current_playlist - 1].getFiles());
-        if(new_tab){
+        if (new_tab)
+        {
             curPlist = current_playlist;
             preAction = currentAction;
-            new_tab = false; 
+            new_tab = false;
         }
     }
 }
@@ -1236,9 +1325,10 @@ void Controller::PlayAll()
             play_back.StopTimeThread();
             ReloadScreen();
             new_tab = play_back.PlayMedia(playlists[num - 1].getFiles());
-            if(new_tab){
+            if (new_tab)
+            {
                 preAction = currentAction;
-                new_tab = false; 
+                new_tab = false;
             }
         }
     }
@@ -1296,7 +1386,7 @@ void Controller::Previous()
     {
         play_back.StopTimeThread();
         ReloadScreen();
-        play_back.PreviousMedia(playlists[curPlist- 1].getFiles());
+        play_back.PreviousMedia(playlists[curPlist - 1].getFiles());
     }
 }
 // Reload screen
