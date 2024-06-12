@@ -17,7 +17,6 @@
 #include <condition_variable>
 #include <mutex>
 #include <ctime>
-
 namespace fs = std::filesystem;
 #define current 0;
 
@@ -45,14 +44,12 @@ public:
     void VolumeUp();
     void VolumeDown();
     void setTrack(int track);
-    void stopTimer();
     void RepeatSong();
     void AllSong();
     void StartTimeThread(std::string title, int duration);
     void StopTimeThread();
     std::atomic<bool> quitTimeThread;
     bool isPaused = false;
-
 private:
     MusicData music_Data;
     const int Volume_Step = 1;

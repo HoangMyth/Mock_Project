@@ -12,7 +12,6 @@ Controller::Controller(const std::string &baseDir) : baseDir(baseDir), currentPa
         std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
         // Handle SDL initialization error
     }
-
     // Initialize SDL_Mixer and check for errors
     int mix_flags = MIX_INIT_FLAC | MIX_INIT_MOD | MIX_INIT_MP3 | MIX_INIT_OGG;
     int initialized_flags = Mix_Init(mix_flags);
@@ -32,9 +31,6 @@ Controller::Controller(const std::string &baseDir) : baseDir(baseDir), currentPa
 // Destructor
 Controller::~Controller()
 {
-    // Stop any playing music and clean up
-    // stopMusic();
-
     // Quit SDL_Mixer
     Mix_CloseAudio();
     Mix_Quit();
@@ -42,7 +38,36 @@ Controller::~Controller()
     // Quit SDL
     SDL_Quit();
 }
-// hook for music
+//---------------------------------------Input-----------------------------------------------------
+void Controller::EnterCharInput(char& command){
+    while (true) {
+        std::cin >> command;
+
+        // Check if the input was valid and is a single character
+        if (std::cin.fail() || std::cin.peek() != '\n') {
+            std::cin.clear(); // Clear the error flag
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Discard invalid input
+            std::cout << "Invalid input. Please enter a single character." << std::endl;
+        } else {
+            break; // Exit loop if input is valid
+        }
+    }
+}
+
+void Controller:: EnterIntegerInput(int& num) {
+    while (true) {
+        std::cin >> num;
+        if (std::cin.fail() || num <= 0) { 
+            std::cin.clear(); 
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); 
+            std::cout << "Invalid input. Please enter a positive integer." << std::endl;
+        } else {
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); 
+            break; 
+        }
+    }
+}
+//------------------------------Hook for music------------------------------------
 void Controller::MusicFinishedCallbackWrapper()
 {
     if (g_playback && g_mediafiles)
@@ -50,8 +75,8 @@ void Controller::MusicFinishedCallbackWrapper()
         g_playback->FunctionCallback(*g_mediafiles);
     }
 }
-
-void Controller::callNextFunc()
+//--------------------------------------Run Tab-------------------------------------------
+void Controller::RunTab()
 {
     if (!actions.empty())
     {
@@ -86,12 +111,14 @@ void Controller::run()
     mediapaths = model.getMediaFilepaths(baseDir);
     musicpaths = model.getMusicFilepaths(baseDir);
     videopaths = model.getVideoFilepaths(baseDir);
-    actions.push(&Controller::Homeaction);
-    currentAction = &Controller::Homeaction;
+    actions.push(&Controller::HomeTab
+);
+    currentTab = &Controller::HomeTab
+;
 
     while (!ex)
     {
-        callNextFunc();
+        RunTab();
     }
     play_back.StopTimeThread();
 }
@@ -102,8 +129,9 @@ void Controller::commonActions(char command, int page_num)
     switch (command)
     {
     case 'g': // go to page n
+        play_back.StopTimeThread();
         std::cout << "Enter page: ";
-        std::cin >> page_num;
+        EnterIntegerInput(page_num);
         gotoPage(page_num);
         break;
     case 'n': // next page
@@ -113,12 +141,15 @@ void Controller::commonActions(char command, int page_num)
         backPage();
         break;
     case 't': // remove file in list
+        play_back.StopTimeThread();
         remove();
         break;
     case 'e': // edit metadata of file
+        play_back.StopTimeThread();
         Edit();
         break;
     case 'a': // add file to playlist
+        play_back.StopTimeThread();
         addtoPlaylist();
         break;
     default:
@@ -179,49 +210,33 @@ void Controller::playbackActions(char command)
         break;
     }
 }
-//////----------------------------------------Actions----------------------------------------------
-void Controller::Homeaction()
+//////----------------------------------------Tabs----------------------------------------------
+void Controller::HomeTab()
 {
     View view;
     current_playlist = 0;
-    currentAction = &Controller::Homeaction;
+    currentTab = &Controller::HomeTab
+;
     char command;
     int page_num;
     Home();
     while (true)
     {
-        // std::cout << "Enter command: ";
-        // std::cin >> command;
-        while (true)
-        {
-            std::cout << "Enter command: ";
-            std::cin >> command;
-
-            // Check if the input was valid and is a single character
-            if (std::cin.fail() || std::cin.peek() != '\n')
-            {
-                std::cin.clear();                                                   // Clear the error flag
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Discard invalid input
-                std::cout << "Invalid input. Please enter a single character." << std::endl;
-            }
-            else
-            {
-                break; // Exit loop if input is valid
-            }
-        }
+        std::cout << "Enter command: ";
+        EnterCharInput(command);
         switch (command)
         {
         case 'r':
-            actions.push(currentAction);
-            actions.push(&Controller::Musicaction);
+            actions.push(currentTab);
+            actions.push(&Controller::MusicTab);
             return;
         case 'd':
-            actions.push(currentAction);
-            actions.push(&Controller::Videoaction);
+            actions.push(currentTab);
+            actions.push(&Controller::VideoTab);
             return;
         case 'y':
-            actions.push(currentAction);
-            actions.push(&Controller::Playlistaction);
+            actions.push(currentTab);
+            actions.push(&Controller::PlaylistTab);
             return;
         case 'b': // return previous action
             if (!actions.empty())
@@ -245,51 +260,35 @@ void Controller::Homeaction()
     }
     if (ex != true)
     {
-        callNextFunc();
+        RunTab();
     }
 }
-void Controller::Musicaction()
+void Controller::MusicTab()
 {
     current_playlist = 0;
-    currentAction = &Controller::Musicaction;
+    currentTab = &Controller::MusicTab;
     Musiclibrary();
     char command;
     int page_num;
     View view;
     while (true)
     {
-        // std::cout << "Enter command: ";
-        // std::cin >> command;
-        while (true)
-        {
-            std::cout << "Enter command: ";
-            std::cin >> command;
-
-            // Check if the input was valid and is a single character
-            if (std::cin.fail() || std::cin.peek() != '\n')
-            {
-                std::cin.clear();                                                   // Clear the error flag
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Discard invalid input
-                std::cout << "Invalid input. Please enter a single character." << std::endl;
-            }
-            else
-            {
-                break; // Exit loop if input is valid
-            }
-        }
+        std::cout << "Enter command: ";
+        EnterCharInput(command);
         switch (command)
         {
         case 'f':
-            actions.push(currentAction);
-            actions.push(&Controller::Homeaction);
+            actions.push(currentTab);
+            actions.push(&Controller::HomeTab
+        );
             return;
         case 'd':
-            actions.push(currentAction);
-            actions.push(&Controller::Videoaction);
+            actions.push(currentTab);
+            actions.push(&Controller::VideoTab);
             return;
         case 'y':
-            actions.push(currentAction);
-            actions.push(&Controller::Playlistaction);
+            actions.push(currentTab);
+            actions.push(&Controller::PlaylistTab);
             return;
         case 'b': // return previous action
             if (!actions.empty())
@@ -315,51 +314,35 @@ void Controller::Musicaction()
     }
     if (ex != true)
     {
-        callNextFunc();
+        RunTab();
     }
 }
-void Controller::Videoaction()
+void Controller::VideoTab()
 {
     current_playlist = 0;
-    currentAction = &Controller::Videoaction;
+    currentTab = &Controller::VideoTab;
     Videolibrary();
     char command;
     int page_num;
     View view;
     while (true)
     {
-        // std::cout << "Enter command: ";
-        // std::cin >> command;
-        while (true)
-        {
-            std::cout << "Enter command: ";
-            std::cin >> command;
-
-            // Check if the input was valid and is a single character
-            if (std::cin.fail() || std::cin.peek() != '\n')
-            {
-                std::cin.clear();                                                   // Clear the error flag
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Discard invalid input
-                std::cout << "Invalid input. Please enter a single character." << std::endl;
-            }
-            else
-            {
-                break; // Exit loop if input is valid
-            }
-        }
+        std::cout << "Enter command: ";
+        EnterCharInput(command);
         switch (command)
         {
         case 'f':
-            actions.push(currentAction);
-            actions.push(&Controller::Homeaction);
+            actions.push(currentTab);
+            actions.push(&Controller::HomeTab
+        );
             return;
         case 'r':
-            actions.push(currentAction);
-            actions.push(&Controller::Musicaction);
+            actions.push(currentTab);
+            actions.push(&Controller::MusicTab);
             return;
         case 'y':
-            actions.push(currentAction);
-            actions.push(&Controller::Playlistaction);
+            actions.push(currentTab);
+            actions.push(&Controller::PlaylistTab);
             return;
         case 'b': // return previous action
             if (!actions.empty())
@@ -383,13 +366,13 @@ void Controller::Videoaction()
     }
     if (ex != true)
     {
-        callNextFunc();
+        RunTab();
     }
 }
-void Controller::Playlistaction()
+void Controller::PlaylistTab()
 {
     current_playlist = 0;
-    currentAction = &Controller::Playlistaction;
+    currentTab = &Controller::PlaylistTab;
     Playlists();
     char command;
     int page_num;
@@ -397,49 +380,33 @@ void Controller::Playlistaction()
     View view;
     while (true)
     {
-        // std::cout << "Enter command: ";
-        // std::cin >> command;
-        while (true)
-        {
-            std::cout << "Enter command: ";
-            std::cin >> command;
-
-            // Check if the input was valid and is a single character
-            if (std::cin.fail() || std::cin.peek() != '\n')
-            {
-                std::cin.clear();                                                   // Clear the error flag
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Discard invalid input
-                std::cout << "Invalid input. Please enter a single character." << std::endl;
-            }
-            else
-            {
-                break; // Exit loop if input is valid
-            }
-        }
+        std::cout << "Enter command: ";
+        EnterCharInput(command);
         switch (command)
         {
         case 'f':
-            actions.push(currentAction);
-            actions.push(&Controller::Homeaction);
+            actions.push(currentTab);
+            actions.push(&Controller::HomeTab
+        );
             return;
         case 'r':
-            actions.push(currentAction);
-            actions.push(&Controller::Musicaction);
+            actions.push(currentTab);
+            actions.push(&Controller::MusicTab);
             return;
         case 'd':
-            actions.push(currentAction);
-            actions.push(&Controller::Videoaction);
+            actions.push(currentTab);
+            actions.push(&Controller::VideoTab);
             return;
         case 'i':
-            actions.push(currentAction);
+            actions.push(currentTab);
             if (playlists.size() != 0)
             {
                 std::cout << "Choose your playlist: ";
-                std::cin >> current_playlist;
+                EnterIntegerInput(current_playlist);
             }
             if ((current_playlist > 0) && (current_playlist <= playlists.size()))
             {
-                actions.push(&Controller::PlaylistLibaction);
+                actions.push(&Controller::PlaylistLibTab);
             }
             else
             {
@@ -471,54 +438,38 @@ void Controller::Playlistaction()
     }
     if (ex != true)
     {
-        callNextFunc();
+        RunTab();
     }
 }
-void Controller::PlaylistLibaction()
+void Controller::PlaylistLibTab()
 {
-    currentAction = &Controller::PlaylistLibaction;
+    currentTab = &Controller::PlaylistLibTab;
     Playlistlibrary();
     char command;
     int page_num;
     View view;
     while (true)
     {
-        // std::cout << "Enter command: ";
-        // std::cin >> command;
-        while (true)
-        {
-            std::cout << "Enter command: ";
-            std::cin >> command;
-
-            // Check if the input was valid and is a single character
-            if (std::cin.fail() || std::cin.peek() != '\n')
-            {
-                std::cin.clear();                                                   // Clear the error flag
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Discard invalid input
-                std::cout << "Invalid input. Please enter a single character." << std::endl;
-            }
-            else
-            {
-                break; // Exit loop if input is valid
-            }
-        }
+        std::cout << "Enter command: ";
+        EnterCharInput(command);
         switch (command)
         {
         case 'f':
-            actions.push(currentAction);
-            actions.push(&Controller::Homeaction);
+            actions.push(currentTab);
+            actions.push(&Controller::HomeTab
+        );
             return;
         case 'r':
-            actions.push(currentAction);
-            actions.push(&Controller::Musicaction);
+            actions.push(currentTab);
+            actions.push(&Controller::MusicTab);
             return;
         case 'd':
-            actions.push(currentAction);
-            actions.push(&Controller::Videoaction);
+            actions.push(currentTab);
+            actions.push(&Controller::VideoTab);
             return;
         case 'y':
-            actions.push(currentAction);
-            actions.push(&Controller::Playlistaction);
+            actions.push(currentTab);
+            actions.push(&Controller::PlaylistTab);
             return;
         case 'b': // return previous action
             if (!actions.empty())
@@ -542,7 +493,7 @@ void Controller::PlaylistLibaction()
     }
     if (ex != true)
     {
-        callNextFunc();
+        RunTab();
     }
 }
 
@@ -585,7 +536,6 @@ void Controller::Musiclibrary()
     view.clearScreen();
     view.displayTab();
     view.displayMenu();
-
     view.displayMediaFiles(musicfiles, currentPage, PAGE_SIZE, totalPages);
     view.displayPlayback();
 }
@@ -664,23 +614,24 @@ void Controller::gotoPage(int page_num)
         view.clearScreen();
         view.displayTab();
         view.displayMenu();
-        if (currentAction == &Controller::Homeaction)
+        if (currentTab == &Controller::HomeTab
+    )
         {
             view.displayMediaFiles(mediafiles, page_num, PAGE_SIZE, totalPages);
         }
-        else if (currentAction == &Controller::Musicaction)
+        else if (currentTab == &Controller::MusicTab)
         {
             view.displayMediaFiles(musicfiles, page_num, PAGE_SIZE, totalPages);
         }
-        else if (currentAction == &Controller::Videoaction)
+        else if (currentTab == &Controller::VideoTab)
         {
             view.displayMediaFiles(videofiles, page_num, PAGE_SIZE, totalPages);
         }
-        else if (currentAction == &Controller::Playlistaction)
+        else if (currentTab == &Controller::PlaylistTab)
         {
             view.displayPlaylists(playlists, page_num, PAGE_SIZE, totalPages);
         }
-        else if (currentAction == &Controller::PlaylistLibaction)
+        else if (currentTab == &Controller::PlaylistLibTab)
         {
             view.displayMediaFiles(playlists[current_playlist - 1].getFiles(), page_num, PAGE_SIZE, totalPages);
         }
@@ -751,7 +702,7 @@ void Controller::createPlaylist()
             char choice;
             std::cout << "Same name with existed playlist." << std::endl;
             std::cout << "Do you want to continute creat new playlist? (y/n): ";
-            std::cin >> choice;
+            EnterCharInput(choice);
             if (choice == 'n')
             {
                 break;
@@ -764,26 +715,29 @@ void Controller::createPlaylist()
 //-------------------------------------Add media file to playlist-----------------------------------------
 void Controller::addtoPlaylist()
 {
-    if (currentAction == &Controller::Homeaction)
+    if (currentTab == &Controller::HomeTab
+)
     {
         addfiletoPlaylist(mediafiles);
     }
-    else if (currentAction == &Controller::Musicaction)
+    else if (currentTab == &Controller::MusicTab)
     {
         addfiletoPlaylist(musicfiles);
     }
-    else if (currentAction == &Controller::Videoaction)
+    else if (currentTab == &Controller::VideoTab)
     {
         addfiletoPlaylist(videofiles);
     }
-    else if (currentAction == &Controller::Playlistaction)
+    else if (currentTab == &Controller::PlaylistTab)
     {
         addplaylisttoplaylist();
     }
-    else if (currentAction == &Controller::PlaylistLibaction)
+    else if (currentTab == &Controller::PlaylistLibTab)
     {
         addfiletoPlaylist(playlists[current_playlist - 1].getFiles());
     }
+    // ReloadScreen after removing playlist
+    ReloadScreen();
 }
 // Add media file to playlist
 void Controller::addfiletoPlaylist(std::vector<MediaFile> &files)
@@ -797,7 +751,7 @@ void Controller::addfiletoPlaylist(std::vector<MediaFile> &files)
             bool existfile = false;
             // Choose file to add
             std::cout << "Choose file to add: ";
-            std::cin >> file_num;
+            EnterIntegerInput(file_num);
             // check file_num
             if ((0 < file_num) && (file_num <= files.size()))
             {
@@ -825,7 +779,7 @@ void Controller::addfiletoPlaylist(std::vector<MediaFile> &files)
                     std::cout << (i + 1) << ". " << "New playlist" << std::endl;
                     // Choose option to add
                     std::cout << "Choose playlist to add: ";
-                    std::cin >> playlist_num;
+                    EnterIntegerInput(playlist_num);
                     // Check options
                     // Option creat new playlist
                     if (playlist_num == (i + 1))
@@ -872,8 +826,7 @@ void Controller::addfiletoPlaylist(std::vector<MediaFile> &files)
                                 char choice3;
                                 std::cout << "Exist file in playlist." << std::endl;
                                 std::cout << "Do you want to continute to add file to playlist? (y/n): ";
-                                std::cin >> choice3;
-                                std::cin.ignore();
+                                EnterCharInput(choice3);
                                 if (choice3 == 'n')
                                 {
                                     break;
@@ -886,8 +839,7 @@ void Controller::addfiletoPlaylist(std::vector<MediaFile> &files)
                             char choice1;
                             std::cout << "Invalid choice." << std::endl;
                             std::cout << "Do you want to continute to add file to playlist? (y/n): ";
-                            std::cin >> choice1;
-                            std::cin.ignore();
+                            EnterCharInput(choice1);
                             if (choice1 == 'n')
                             {
                                 break;
@@ -902,16 +854,13 @@ void Controller::addfiletoPlaylist(std::vector<MediaFile> &files)
                 char choice;
                 std::cout << "Invalid choice." << std::endl;
                 std::cout << "Do you want to continute to add file to playlist? (y/n): ";
-                std::cin >> choice;
-                std::cin.ignore();
+                EnterCharInput(choice);
                 if (choice == 'n')
                 {
                     break;
                 }
             }
         }
-        // ReloadScreen after removing file
-        ReloadScreen();
     }
 }
 // Add playlist to playlist
@@ -927,7 +876,7 @@ void Controller::addplaylisttoplaylist()
             int j;
             // Choose file to add
             std::cout << "Choose file to add: ";
-            std::cin >> file_num;
+            EnterIntegerInput(file_num);
             // check file_num
             if ((0 < file_num) && (file_num <= playlists.size()))
             {
@@ -942,7 +891,7 @@ void Controller::addplaylisttoplaylist()
                 std::cout << (i + 1) << ". " << "New playlist" << std::endl;
                 // Choose option to add
                 std::cout << "Choose playlist to add: ";
-                std::cin >> playlist_num;
+                EnterIntegerInput(playlist_num);
                 // Check options
                 // Option creat new playlist
                 if (playlist_num == (i + 1))
@@ -997,8 +946,7 @@ void Controller::addplaylisttoplaylist()
                     char choice1;
                     std::cout << "Invalid choice." << std::endl;
                     std::cout << "Do you want to continute to add file to playlist? (y/n): ";
-                    std::cin >> choice1;
-                    std::cin.ignore();
+                    EnterCharInput(choice1);
                     if (choice1 == 'n')
                     {
                         break;
@@ -1011,41 +959,42 @@ void Controller::addplaylisttoplaylist()
                 char choice;
                 std::cout << "Invalid choice." << std::endl;
                 std::cout << "Do you want to continute to add playlist to playlist? (y/n): ";
-                std::cin >> choice;
+                EnterCharInput(choice);
                 if (choice == 'n')
                 {
                     break;
                 }
             }
         }
-        // ReloadScreen after removing file
-        ReloadScreen();
     }
 }
 
 //---------------------------------Method remove: remove playlist, mediafile-------------------------------
 void Controller::remove()
 {
-    if (currentAction == &Controller::Homeaction)
+    if (currentTab == &Controller::HomeTab
+)
     {
         removeMediafile(mediapaths);
     }
-    else if (currentAction == &Controller::Musicaction)
+    else if (currentTab == &Controller::MusicTab)
     {
         removeMediafile(musicpaths);
     }
-    else if (currentAction == &Controller::Videoaction)
+    else if (currentTab == &Controller::VideoTab)
     {
         removeMediafile(videopaths);
     }
-    else if (currentAction == &Controller::Playlistaction)
+    else if (currentTab == &Controller::PlaylistTab)
     {
         removePlaylist();
     }
-    else if (currentAction == &Controller::PlaylistLibaction)
+    else if (currentTab == &Controller::PlaylistLibTab)
     {
         removeMediafile(playlists[current_playlist - 1].getFiles());
     }
+    // ReloadScreen after removing playlist
+    ReloadScreen();   
 }
 // remove mediafile
 template <typename T>
@@ -1057,7 +1006,7 @@ void Controller::removeMediafile(std::vector<T> &files)
         while (true)
         {
             std::cout << "Choose num of mediafile to remove: ";
-            std::cin >> num;
+            EnterIntegerInput(num);
             if ((0 < num) && (num <= files.size()))
             {
                 files.erase(files.begin() + num - 1);
@@ -1068,15 +1017,13 @@ void Controller::removeMediafile(std::vector<T> &files)
                 char choice;
                 std::cout << "Invalid choice." << std::endl;
                 std::cout << "Do you want to continue to remove? (y/n)" << std::endl;
-                std::cin >> choice;
+                EnterCharInput(choice);
                 if (choice == 'n')
                 {
                     break;
                 }
             }
         }
-        // ReloadScreen after removing file
-        ReloadScreen();
     }
 }
 // Remove playlist
@@ -1088,7 +1035,7 @@ void Controller::removePlaylist()
         while (true)
         {
             std::cout << "Choose num of playlist to delete: ";
-            std::cin >> num;
+            EnterIntegerInput(num);
             // Check num
             if ((num <= playlists.size()) && (num > 0))
             {
@@ -1103,41 +1050,42 @@ void Controller::removePlaylist()
                 char choice;
                 std::cout << "Invalid choice." << std::endl;
                 std::cout << "Do you want to continue to remove? (y/n)" << std::endl;
-                std::cin >> choice;
+                EnterCharInput(choice);
                 if (choice == 'n')
                 {
                     break;
                 }
             }
         }
-        // ReloadScreen after removing playlist
-        ReloadScreen();
     }
 }
 
 //-----------------------------Method edit: edit metadata, rename playlist------------------------------------
 void Controller::Edit()
 {
-    if (currentAction == &Controller::Homeaction)
+    if (currentTab == &Controller::HomeTab
+)
     {
         editMetadata(mediafiles);
     }
-    else if (currentAction == &Controller::Musicaction)
+    else if (currentTab == &Controller::MusicTab)
     {
         editMetadata(musicfiles);
     }
-    else if (currentAction == &Controller::Videoaction)
+    else if (currentTab == &Controller::VideoTab)
     {
         editMetadata(videofiles);
     }
-    else if (currentAction == &Controller::Playlistaction)
+    else if (currentTab == &Controller::PlaylistTab)
     {
         renamePlaylist();
     }
-    else if (currentAction == &Controller::PlaylistLibaction)
+    else if (currentTab == &Controller::PlaylistLibTab)
     {
         editMetadata(playlists[current_playlist - 1].getFiles());
     }
+    // ReloadScreen after removing playlist
+    ReloadScreen();
 }
 // Edit metadata
 void Controller::editMetadata(std::vector<MediaFile> &files)
@@ -1151,29 +1099,64 @@ void Controller::editMetadata(std::vector<MediaFile> &files)
         while (true)
         {
             std::cout << "Choose file to edit metadata: ";
-            std::cin >> num;
+            EnterIntegerInput(num);
             // Check num
             if ((num <= files.size()) && (num > 0))
             {
-                std::cout << "Enter new title (current: " << files[num - 1].getTitle() << "): ";
-                std::getline(std::cin >> std::ws, title);
-                std::cout << "Enter new artist (current: " << files[num - 1].getArtist() << "): ";
-                std::getline(std::cin, artist);
-                std::cout << "Enter new album (current: " << files[num - 1].getAlbum() << "): ";
-                std::getline(std::cin, album);
-                std::cout << "Enter new genre (current: " << files[num - 1].getGenre() << "): ";
-                std::getline(std::cin, genre);
-                std::cout << "Enter new year (current: " << files[num - 1].getYear() << "): ";
-                std::cin >> year;
-                if (!title.empty())
-                    files[num - 1].setTitle(title);
-                if (!artist.empty())
-                    files[num - 1].setArtist(artist);
-                if (!album.empty())
-                    files[num - 1].setAlbum(album);
-                if (!genre.empty())
-                    files[num - 1].setGenre(genre);
-                files[num - 1].setYear(year);
+            char choice;
+            while (true) {
+                std::cout << "Select the metadata field to edit:\n";
+                std::cout << "1. Title\n";
+                std::cout << "2. Artist\n";
+                std::cout << "3. Album\n";
+                std::cout << "4. Genre\n";
+                std::cout << "5. Year\n";
+                std::cout << "6. Done\n";
+                std::cout << "Enter choice: ";
+                EnterCharInput(choice);
+                std::string inputStr;
+                int inputInt;
+                switch (choice) {
+                    case '1':
+                        std::cout << "Enter new title (current: " << files[num - 1].getTitle() << "): ";
+                        std::getline(std::cin >> std::ws, inputStr);
+                        if (!inputStr.empty())
+                            files[num - 1].setTitle(inputStr);
+                        break;
+                    case '2':
+                        std::cout << "Enter new artist (current: " << files[num - 1].getArtist() << "): ";
+                        std::getline(std::cin >> std::ws, inputStr);
+                        if (!inputStr.empty())
+                            files[num - 1].setArtist(inputStr);
+                        break;
+                    case '3':
+                        std::cout << "Enter new album (current: " << files[num - 1].getAlbum() << "): ";
+                        std::getline(std::cin >> std::ws, inputStr);
+                        if (!inputStr.empty())
+                            files[num - 1].setAlbum(inputStr);
+                        break;
+                    case '4':
+                        std::cout << "Enter new genre (current: " << files[num - 1].getGenre() << "): ";
+                        std::getline(std::cin >> std::ws, inputStr);
+                        if (!inputStr.empty())
+                            files[num - 1].setGenre(inputStr);
+                        break;
+                    case '5':
+                        std::cout << "Enter new year (current: " << files[num - 1].getYear() << "): ";
+                        std::cin >> inputInt;
+                        if (!std::cin.fail()) // Basic validation
+                            files[num - 1].setYear(inputInt);
+                        std::cin.clear(); // Clear any error flags
+                        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Discard invalid input
+                        break;
+                    case '6':
+                        model.editMediaFileMetadata(files[num - 1]);
+                        return; // Exit edit
+                    default:
+                        std::cout << "Invalid choice. Please select again." << std::endl;
+                        break;
+                }
+            }
                 model.editMediaFileMetadata(files[num - 1]);
                 break;
             }
@@ -1182,15 +1165,13 @@ void Controller::editMetadata(std::vector<MediaFile> &files)
                 char choice;
                 std::cout << "Invalid choice." << std::endl;
                 std::cout << "Do you want to continue to edit? (y/n)" << std::endl;
-                std::cin >> choice;
+                EnterCharInput(choice);
                 if (choice == 'n')
                 {
                     break;
                 }
             }
         }
-        // ReloadScreen after editing file
-        ReloadScreen();
     }
 }
 // Rename playlist
@@ -1233,7 +1214,7 @@ void Controller::renamePlaylist()
                     char choice;
                     std::cout << "Same name with existed playlist." << std::endl;
                     std::cout << "Do you want to continute rename playlist? (y/n): ";
-                    std::cin >> choice;
+                    EnterCharInput(choice);
                     if (choice == 'n')
                     {
                         break;
@@ -1245,61 +1226,60 @@ void Controller::renamePlaylist()
                 char choice;
                 std::cout << "Invalid choice." << std::endl;
                 std::cout << "Do you want to continue to rename playlist? (y/n)" << std::endl;
-                std::cin >> choice;
+                EnterCharInput(choice);
                 if (choice == 'n')
                 {
                     break;
                 }
             }
         }
-        // ReloadScreen after editing file
-        ReloadScreen();
     }
 }
 //------------------------Method with playback----------------------------------
 // Play media file or playlist
 void Controller::Play()
 {
-    if (currentAction == &Controller::Homeaction)
+    if (currentTab == &Controller::HomeTab
+)
     {
         play_back.StopTimeThread();
         ReloadScreen();
         new_tab = play_back.PlayMedia(mediafiles);
         if (new_tab)
         {
-            preAction = currentAction;
+            preTab = currentTab;
             new_tab = false;
         }
     }
-    else if (currentAction == &Controller::Musicaction)
+    else if (currentTab == &Controller::MusicTab)
     {
         play_back.StopTimeThread();
         ReloadScreen();
         new_tab = play_back.PlayMedia(musicfiles);
         if (new_tab)
         {
-            preAction = currentAction;
+            preTab = currentTab;
             new_tab = false;
         }
     }
-    else if (currentAction == &Controller::Videoaction)
+    else if (currentTab == &Controller::VideoTab)
     {
         play_back.StopTimeThread();
         ReloadScreen();
         new_tab = play_back.PlayMedia(videofiles);
         if (new_tab)
         {
-            preAction = currentAction;
+            preTab = currentTab;
             new_tab = false;
         }
     }
-    else if (currentAction == &Controller::Playlistaction)
+    else if (currentTab == &Controller::PlaylistTab)
     {
         play_back.StopTimeThread();
         ReloadScreen();
         PlayAll();
     }
-    else if (currentAction == &Controller::PlaylistLibaction)
+    else if (currentTab == &Controller::PlaylistLibTab)
     {
         play_back.StopTimeThread();
         ReloadScreen();
@@ -1307,7 +1287,7 @@ void Controller::Play()
         if (new_tab)
         {
             curPlist = current_playlist;
-            preAction = currentAction;
+            preTab = currentTab;
             new_tab = false;
         }
     }
@@ -1327,7 +1307,7 @@ void Controller::PlayAll()
             new_tab = play_back.PlayMedia(playlists[num - 1].getFiles());
             if (new_tab)
             {
-                preAction = currentAction;
+                preTab = currentTab;
                 new_tab = false;
             }
         }
@@ -1336,25 +1316,26 @@ void Controller::PlayAll()
 // Next mediafile
 void Controller::Next()
 {
-    if (preAction == &Controller::Homeaction)
+    if (preTab == &Controller::HomeTab
+)
     {
         play_back.StopTimeThread();
         ReloadScreen();
         play_back.NextMedia(mediafiles);
     }
-    else if (preAction == &Controller::Musicaction)
+    else if (preTab == &Controller::MusicTab)
     {
         play_back.StopTimeThread();
         ReloadScreen();
         play_back.NextMedia(musicfiles);
     }
-    else if (preAction == &Controller::Videoaction)
+    else if (preTab == &Controller::VideoTab)
     {
         play_back.StopTimeThread();
         ReloadScreen();
         play_back.NextMedia(videofiles);
     }
-    else if ((preAction == &Controller::Playlistaction) || (preAction == &Controller::PlaylistLibaction))
+    else if ((preTab == &Controller::PlaylistTab) || (preTab == &Controller::PlaylistLibTab))
     {
         play_back.StopTimeThread();
         ReloadScreen();
@@ -1364,25 +1345,26 @@ void Controller::Next()
 // Previous mediafile
 void Controller::Previous()
 {
-    if (preAction == &Controller::Homeaction)
+    if (preTab == &Controller::HomeTab
+)
     {
         play_back.StopTimeThread();
         ReloadScreen();
         play_back.PreviousMedia(mediafiles);
     }
-    else if (preAction == &Controller::Musicaction)
+    else if (preTab == &Controller::MusicTab)
     {
         play_back.StopTimeThread();
         ReloadScreen();
         play_back.PreviousMedia(musicfiles);
     }
-    else if (preAction == &Controller::Videoaction)
+    else if (preTab == &Controller::VideoTab)
     {
         play_back.StopTimeThread();
         ReloadScreen();
         play_back.PreviousMedia(videofiles);
     }
-    else if ((preAction == &Controller::Playlistaction) || (preAction == &Controller::PlaylistLibaction))
+    else if ((preTab == &Controller::PlaylistTab) || (preTab == &Controller::PlaylistLibTab))
     {
         play_back.StopTimeThread();
         ReloadScreen();
@@ -1392,23 +1374,24 @@ void Controller::Previous()
 // Reload screen
 void Controller::ReloadScreen()
 {
-    if (currentAction == &Controller::Homeaction)
+    if (currentTab == &Controller::HomeTab
+)
     {
         Home();
     }
-    else if (currentAction == &Controller::Musicaction)
+    else if (currentTab == &Controller::MusicTab)
     {
         Musiclibrary();
     }
-    else if (currentAction == &Controller::Videoaction)
+    else if (currentTab == &Controller::VideoTab)
     {
         Videolibrary();
     }
-    else if (currentAction == &Controller::Playlistaction)
+    else if (currentTab == &Controller::PlaylistTab)
     {
         Playlists();
     }
-    else if (currentAction == &Controller::PlaylistLibaction)
+    else if (currentTab == &Controller::PlaylistLibTab)
     {
         Playlistlibrary();
     }

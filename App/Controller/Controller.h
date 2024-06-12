@@ -13,9 +13,11 @@ class Controller {
 public:
     Controller();
     Controller(const std::string &baseDir);
-     ~Controller();
-     void ReloadScreen();
-     void getfilelist(std::vector<std::string> filepaths, std::vector<MediaFile>& filelist);
+    ~Controller();
+    void ReloadScreen();
+    void getfilelist(std::vector<std::string> filepaths, std::vector<MediaFile>& filelist);
+    void EnterCharInput(char& command);
+    void EnterIntegerInput(int& num);
     //Method to take list of media, music, video
     void Home();                                    
     void Musiclibrary();                            
@@ -47,11 +49,11 @@ public:
     void removeMediafile(std::vector<T>& files);                           
     //Method  action
     void run();
-    void Homeaction();                                          //[f] 
-    void Musicaction();                                         //[r]
-    void Videoaction();                                         //[d]
-    void Playlistaction();                                      //[y]
-    void PlaylistLibaction();                                   //[i]
+    void HomeTab();                                          //[f] 
+    void MusicTab();                                         //[r]
+    void VideoTab();                                         //[d]
+    void PlaylistTab();                                      //[y]
+    void PlaylistLibTab();                                   //[i]
     bool ex = false;
     static void MusicFinishedCallbackWrapper();
 private:
@@ -68,10 +70,10 @@ private:
     std::vector<MediaFile> videofiles;
     std::vector<Playlist>  playlists;
     typedef void(Controller::*Action)();
-    Action currentAction;
-    Action preAction;
+    Action currentTab;
+    Action preTab;
     std::stack<Action> actions; 
-    void callNextFunc();
+    void RunTab();
     PlayBack play_back;
     bool new_tab = false;
     int curPlist;

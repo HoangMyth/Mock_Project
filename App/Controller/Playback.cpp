@@ -90,8 +90,12 @@ void PlayBack :: displayCurrentTime(std::string title, int duration) {
             int seconds = currentTimeSec % 60;
             std::string currentTime = std::to_string(minutes) + ":" + (seconds < 10 ? "0" : "") + std::to_string(seconds);
             std::cout << std::left
-            << std::setw(1) << "\r|"
-            << std::setw(185) << title
+            << std::setw(2) << "\r| "
+            << std::right
+            << std::setw(4) << (music_Data.currentTrack + 1) 
+            << ". "
+            << std::left
+            << std::setw(178) << title
             << std::setw(6) << currentTime 
             << "/"
             << std::setw(6) << time
@@ -99,7 +103,6 @@ void PlayBack :: displayCurrentTime(std::string title, int duration) {
             << std::flush;
         }
     }
-    //std::cout << "-" << std::endl;
 }
 void PlayBack::StartTimeThread(std::string title, int duration){
     StopTimeThread();

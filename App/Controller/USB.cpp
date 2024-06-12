@@ -49,9 +49,9 @@ namespace fs = std::filesystem;
 
 void USB :: displayMenu() {
     std::cout << "Menu:\n";
-    std::cout << "1. Play from USB\n";
-    std::cout << "2. Play from Folder\n";
-    std::cout << "3. Exit\n";
+    std::cout << "[u] Play from USB\n";
+    std::cout << "[f] Play from Folder\n";
+    std::cout << "[e] Exit\n";
     std::cout << "Enter your choice: ";
 }
 

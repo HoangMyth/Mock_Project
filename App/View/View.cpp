@@ -67,15 +67,17 @@ void View::displayMenuforplaylist(void){
 } 
 void View::displayPlayback(void){
     std::cout << std::left
-    << std::setw(1) << "|"
-    << std::setw(33) << "Previous[j]"
-    << std::setw(33) << "Play[x]" 
-    << std::setw(33) << "Pause[o]"
-    << std::setw(33) << "Next[h]"
-    << std::setw(33) << "Repeat[m]"
-    << std::setw(33) << "Volume[+][-]"
+    << std::setw(4) << "|"
+    << std::setw(24) << "Previous[j]"
+    << std::setw(24) << "Play[x]" 
+    << std::setw(24) << "Pause[o]"
+    << std::setw(24) << "Resume[k]"
+    << std::setw(24) << "Next[h]"
+    << std::setw(24) << "Repeat one[m]"
+    << std::setw(24) << "Repeat all[l]"
+    << std::setw(24) << "Volume[+][-]"
     << std::right 
-    << std::setw(1) << "|"
+    << std::setw(4) << "|"
     << std::endl;
     printLine('=',200);
 }   
